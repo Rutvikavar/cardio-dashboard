@@ -1,37 +1,38 @@
 import streamlit as st
-import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
-# -----------------------
-# Page Config
-# -----------------------
+# -----------------------------
+# Page Configuration
+# -----------------------------
 st.set_page_config(
-    page_title="Cardio Health Dashboard",
+    page_title="Cardio Health Analytics",
     page_icon="❤️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# -----------------------
-# Custom Dark + Glass CSS
-# -----------------------
+# -----------------------------
+# Professional Dark Theme CSS
+# -----------------------------
 st.markdown("""
 <style>
 body {
     background: linear-gradient(135deg, #0f172a, #0a192f);
 }
 
-.main {
-    background-color: transparent;
+.block-container {
+    padding-top: 2rem;
 }
 
-.glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    border-radius: 20px;
+.glass {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
     padding: 20px;
-    box-shadow: 0 0 20px rgba(0,255,150,0.1);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.3);
 }
 
 .metric-title {
@@ -40,60 +41,66 @@ body {
 }
 
 .metric-value {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: bold;
-    color: #00ffcc;
+    color: #00FFC6;
 }
 
 .section-title {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     color: white;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------
-# Dummy Cardio Data
-# -----------------------
-heart_rate = np.random.normal(75, 5, 24)
-steps = 7166
-spo2 = 98
-stress = 32
-cardio_score = 8.7
-calories = 1850
-hydration = 2.4
+# -----------------------------
+# Sidebar Controls
+# -----------------------------
+st.sidebar.title("User Settings")
+selected_user = st.sidebar.selectbox("Select User", ["Rutu", "Guest"])
+days = st.sidebar.slider("Select Days of Data", 7, 30, 24)
 
-# -----------------------
-# Navbar
-# -----------------------
-col1, col2 = st.columns([6, 2])
-with col1:
-    st.markdown("<h2 style='color:white;'>Cardio Health Dashboard</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("---")
+st.sidebar.info("Live Health Monitoring Dashboard")
 
-with col2:
-    st.text_input("Search")
-    st.markdown("👤 Rutu")
+# -----------------------------
+# Dummy Data Generation
+# -----------------------------
+np.random.seed(42)
+heart_rate = np.random.normal(75, 5, days)
+steps = np.random.randint(6000, 12000)
+spo2 = np.random.randint(95, 100)
+stress = np.random.randint(20, 50)
+cardio_score = round(np.random.uniform(7.5, 9.5), 1)
+calories = np.random.randint(1600, 2400)
+hydration = round(np.random.uniform(1.8, 3.5), 1)
+
+# -----------------------------
+# Header
+# -----------------------------
+st.title("❤️ Cardio Health Analytics Dashboard")
+st.caption(f"Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M:%S')}")
 
 st.markdown("---")
 
-# -----------------------
-# Hero Metrics Section
-# -----------------------
+# -----------------------------
+# KPI Section
+# -----------------------------
 col1, col2, col3, col4 = st.columns(4)
 
-metrics = [
+kpis = [
     ("Heart Rate", f"{int(heart_rate[-1])} BPM"),
     ("Cardio Score", f"{cardio_score}/10"),
     ("Oxygen Level", f"{spo2}%"),
     ("Stress Level", f"{stress}%")
 ]
 
-for col, (title, value) in zip([col1, col2, col3, col4], metrics):
+for col, (title, value) in zip([col1, col2, col3, col4], kpis):
     with col:
         st.markdown(f"""
-        <div class="glass-card">
+        <div class="glass">
             <div class="metric-title">{title}</div>
             <div class="metric-value">{value}</div>
         </div>
@@ -101,23 +108,17 @@ for col, (title, value) in zip([col1, col2, col3, col4], metrics):
 
 st.markdown("")
 
-# -----------------------
-# Heart Rate Trend Graph
-# -----------------------
+# -----------------------------
+# Heart Rate Trend
+# -----------------------------
 st.markdown('<div class="section-title">Heart Rate Trend</div>', unsafe_allow_html=True)
 
 df = pd.DataFrame({
-    "Hour": list(range(24)),
+    "Day": list(range(1, days+1)),
     "Heart Rate": heart_rate
 })
 
-fig = px.line(
-    df,
-    x="Hour",
-    y="Heart Rate",
-    markers=True,
-)
-
+fig = px.line(df, x="Day", y="Heart Rate", markers=True)
 fig.update_layout(
     template="plotly_dark",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -125,24 +126,17 @@ fig.update_layout(
     font_color="white"
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
-# -----------------------
-# Lower Sections
-# -----------------------
+# -----------------------------
+# Activity & Sessions
+# -----------------------------
 col1, col2 = st.columns(2)
 
-# Step Counter Card
 with col1:
-    st.markdown('<div class="section-title">Step Counter</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="glass-card">
-        <div class="metric-value">{steps}</div>
-        <div class="metric-title">Steps Today</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Daily Steps</div>', unsafe_allow_html=True)
+    st.metric("Steps Today", steps)
 
-# Weekly Sessions
 with col2:
     st.markdown('<div class="section-title">Weekly Cardio Sessions</div>', unsafe_allow_html=True)
 
@@ -159,36 +153,28 @@ with col2:
         font_color="white"
     )
 
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width='stretch')
 
-# -----------------------
-# Sleep & Nutrition
-# -----------------------
+# -----------------------------
+# Wellness Section
+# -----------------------------
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown('<div class="section-title">Sleep & Recovery</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="glass-card">
-        Deep Sleep: 72% <br>
-        REM: 28% <br>
-        Recovery Score: 85%
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("Recovery Score", "85%")
+    st.progress(0.85)
 
 with col2:
     st.markdown('<div class="section-title">Nutrition Summary</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="glass-card">
-        Calories: {calories} kcal <br>
-        Hydration: {hydration} L <br>
-        Protein: 110g
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("Calories", f"{calories} kcal")
+    st.metric("Hydration", f"{hydration} L")
 
-# -----------------------
-# Achievements
-# -----------------------
-st.markdown('<div class="section-title">Achievements & Goals</div>', unsafe_allow_html=True)
-st.progress(0.7, text="Weekly Cardio Goal 70% Complete")
-st.progress(0.5, text="Hydration Goal 50% Complete")
+# -----------------------------
+# Goals
+# -----------------------------
+st.markdown('<div class="section-title">Goals Progress</div>', unsafe_allow_html=True)
+st.progress(0.7, text="Cardio Goal - 70%")
+st.progress(0.5, text="Hydration Goal - 50%")
+
+st.success("System Status: All health metrics stable ✅")
